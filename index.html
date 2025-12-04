@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Submit Location</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map { height: 400px; width: 100%; margin-bottom: 10px; }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+  </style>
+</head>
+<body>
+
+<h2>Submit Your Location</h2>
+
+<div id="map"></div>
+
+<form id="data-form">
+  <label>Sound:</label><br>
+  <input type="text" name="sound"><br><br>
+
+  <label>Campus:</label><br>
+  <input type="text" name="campus"><br><br>
+
+  <label>Link (optional):</label><br>
+  <input type="text" name="link"><br><br>
+
+  <!-- Hidden fields for coordinates -->
+  <input type="hidden" name="latitude" id="lat">
+  <input type="hidden" name="longitude" id="lng">
+
+  <button type="submit">Submit</button>
+</form>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUGxjqXmThIiBMzMtm1V1gh8IbBnJySn5drzHNPMQ24fsi6WGoPXciGeyOR17zsesO/exec";
+
+  // Initialize map
+  const map = L.map('map', {
+    center: [40.014393, -75.313850],
+    zoom: 15,
+    minZoom: 13,
+    maxZoom: 18
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
+
+  // Restrict map bounds
+  const southWest = L.latLng(40.0000, -75.3300);
+  const northEast = L.latLng(40.0300, -75.3000);
+  const bounds = L.latLngBounds(southWest, northEast);
+  map.setMaxBounds(bounds);
+  map.on('drag', function(){ map.panInsideBounds(bounds, {animate:false}); });
+
+  // Default marker
+  let marker = L.marker([40.014393, -75.313850]).addTo(map);
+  document.getElementById("lat").value = 40.014393;
+  document.getElementById("lng").value = -75.313850;
+
+  // Move marker on click
+  map.on('click', function(e){
+    if(marker) map.removeLayer(marker);
+    marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+    document.getElementById("lat").value = e.latlng.lat;
+    document.getElementById("lng").value = e.latlng.lng;
+  });
+
+  // Submit form
+  document.getElementById("data-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    const formData = new FormData(e.target);
+
+    fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: formData })
+      .then(()=> alert("Submitted!"))
+      .catch(err => alert("Error submitting: "+err));
+
+    e.target.reset();
+    if(marker) map.removeLayer(marker);
+  });
+</script>
+
+</body>
+</html>
