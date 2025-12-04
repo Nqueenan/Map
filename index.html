@@ -2,82 +2,98 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Submit Location</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <title>Select Location</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
   <style>
-    #map { height: 400px; width: 100%; margin-bottom: 10px; }
-    body { font-family: Arial, sans-serif; margin: 20px; }
+    body { margin: 0; font-family: Arial, sans-serif; }
+    #map { height: 100vh; width: 100vw; }
+    .button {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      z-index: 1000;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
 
-<h2>Submit Your Location</h2>
-
 <div id="map"></div>
-
-<form id="data-form">
-  <label>Sound:</label><br>
-  <input type="text" name="sound"><br><br>
-
-  <label>Campus:</label><br>
-  <input type="text" name="campus"><br><br>
-
-  <label>Link (optional):</label><br>
-  <input type="text" name="link"><br><br>
-
-  <!-- Hidden fields for coordinates -->
-  <input type="hidden" name="latitude" id="lat">
-  <input type="hidden" name="longitude" id="lng">
-
-  <button type="submit">Submit</button>
-</form>
+<button class="button" id="locateBtn">Use my current location</button>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUGxjqXmThIiBMzMtm1V1gh8IbBnJySn5drzHNPMQ24fsi6WGoPXciGeyOR17zsesO/exec";
 
-  // Initialize map
-  const map = L.map('map', {
-    center: [40.014393, -75.313850],
-    zoom: 15,
-    minZoom: 13,
-    maxZoom: 18
-  });
+// ---------------------
+// CONFIG
+// ---------------------
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
+const GOOGLE_FORM_BASE =
+  "https://docs.google.com/forms/d/e/1FAIpQLScAUZ4jt4pQTiJSG-RuFTworZAeFy_JvJ8rE5MunL3Nf4-Ktg/viewform?usp=pp_url";
 
-  // Restrict map bounds
-  const southWest = L.latLng(40.0000, -75.3300);
-  const northEast = L.latLng(40.0300, -75.3000);
-  const bounds = L.latLngBounds(southWest, northEast);
-  map.setMaxBounds(bounds);
-  map.on('drag', function(){ map.panInsideBounds(bounds, {animate:false}); });
+// Latitude entry
+const LAT_ID = "entry.1167906740";
 
-  // Default marker
-  let marker = L.marker([40.014393, -75.313850]).addTo(map);
-  document.getElementById("lat").value = 40.014393;
-  document.getElementById("lng").value = -75.313850;
+// Longitude entry
+const LNG_ID = "entry.1228296879";
 
-  // Move marker on click
-  map.on('click', function(e){
-    if(marker) map.removeLayer(marker);
-    marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
-    document.getElementById("lat").value = e.latlng.lat;
-    document.getElementById("lng").value = e.latlng.lng;
-  });
 
-  // Submit form
-  document.getElementById("data-form").addEventListener("submit", function(e){
-    e.preventDefault();
-    const formData = new FormData(e.target);
+// ---------------------
+// MAP INIT
+// ---------------------
 
-    fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: formData })
-      .then(()=> alert("Submitted!"))
-      .catch(err => alert("Error submitting: "+err));
+const map = L.map('map').setView([40.014393, -75.313850], 16);
 
-    e.target.reset();
-    if(marker) map.removeLayer(marker);
-  });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19
+}).addTo(map);
+
+let marker;
+
+
+// ---------------------
+// CLICK MAP → OPEN FORM
+// ---------------------
+
+function openForm(lat, lng) {
+  const url = `${GOOGLE_FORM_BASE}&${LAT_ID}=${lat}&${LNG_ID}=${lng}`;
+  window.location.href = url;
+}
+
+map.on('click', function(e) {
+  const lat = e.latlng.lat.toFixed(6);
+  const lng = e.latlng.lng.toFixed(6);
+
+  if (marker) map.removeLayer(marker);
+  marker = L.marker([lat, lng]).addTo(map);
+
+  openForm(lat, lng);
+});
+
+
+// ---------------------
+// USE MY CURRENT LOCATION
+// ---------------------
+
+document.getElementById("locateBtn").addEventListener("click", function() {
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      openForm(lat, lng);
+    },
+    () => alert("Unable to get location")
+  );
+});
+
 </script>
 
 </body>
