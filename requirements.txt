@@ -1,6 +1,10 @@
-streamlit==1.51.0
-streamlit-folium==0.25.3
-pandas==2.2.2
-folium==0.20.0
-plotly-express==0.4.1
-scikit-learn==1.8.0
+streamlit
+pandas
+pydeck
+numpy
+streamlit-folium
+folium
+plotly
+plotly-express
+scikit-learn
+networkx
